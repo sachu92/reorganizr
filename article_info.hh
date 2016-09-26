@@ -4,6 +4,12 @@
 #include <string>
 #include <vector>
 
+#include <libxml/HTMLparser.h>
+
+
+std::string htmlContent;
+static size_t write_data(void *, size_t, size_t, void*);
+
 class ArticleInfo
 {
 
@@ -11,6 +17,9 @@ public:
 	ArticleInfo();
 	~ArticleInfo();
 	void extract_pdf(char *);
+  void extract_metadata();
+	void traverse(xmlNode*);
+	void print_info();
 
 	bool has_doi;
 	bool has_metadata;
@@ -22,6 +31,7 @@ public:
 	std::string title;
 	std::vector <std::string> author;
 	std::string date;
+	std::string journal;
 	std::string publisher;
 	std::string volume;
 	std::string issue;
