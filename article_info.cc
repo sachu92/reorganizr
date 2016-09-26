@@ -9,6 +9,8 @@
 
 using namespace std;
 
+std::string htmlText;
+
 ArticleInfo::ArticleInfo()
 {
 	this->has_doi = false;
@@ -131,7 +133,7 @@ void ArticleInfo::extract_metadata()
 	// set url
 	curl_easy_setopt(curl, CURLOPT_URL, this->uri.c_str());
 	// verbose output for debug mode
-	curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+	curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L);
 	// disable progress bar
 	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
 	//set write call back
@@ -139,7 +141,7 @@ void ArticleInfo::extract_metadata()
 	// follow redirections
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 	// write content to string
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &htmlContent);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &htmlText);
 	
 	curl_easy_perform(curl);
 	curl_easy_cleanup(curl);
@@ -150,20 +152,22 @@ void ArticleInfo::extract_metadata()
 		return;
 	}
 
+	cout<<"Cleaned up cURL."<<endl;
+
 	htmlDocPtr doc;
 	xmlNode *root = NULL;
 
 	LIBXML_TEST_VERSION
 
-	doc = htmlReadMemory(htmlContent.c_str(), htmlContent.size(), this->uri.c_str(), NULL, HTML_PARSE_NOBLANKS | HTML_PARSE_NOERROR | HTML_PARSE_NOWARNING | HTML_PARSE_NONET);
+	doc = htmlReadMemory(htmlText.c_str(), htmlText.size(), this->uri.c_str(), NULL, HTML_PARSE_NOBLANKS | HTML_PARSE_NOERROR | HTML_PARSE_NOWARNING | HTML_PARSE_NONET);
 	if(NULL == doc)
 	{
 		fprintf(stderr, "Document not parsed.\n");
 		return;
 	}
-
+	cout<<"Read html."<<endl;
 	root = xmlDocGetRootElement(doc);
-
+	
 	if(NULL == root)
 	{
 		fprintf(stderr, "empty document\n");
@@ -171,7 +175,7 @@ void ArticleInfo::extract_metadata()
 		return;
 	}
 
-	traverse(root);
+	this->traverse(root);
 
 	xmlFreeDoc(doc);
 	xmlCleanupParser();
@@ -187,53 +191,52 @@ static size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream)
 void ArticleInfo::traverse(xmlNode *node)
 {
 	xmlNode *curr = NULL;
-	char *name;
-	char *content;
 
 	if(NULL == node)
 		return;
-
 	for(curr = node; curr; curr = curr->next)
 	{
 		if(curr->type == XML_ELEMENT_NODE)
 		{
-			if(strcmp((char *)curr->name, "meta")==0)
+			if(xmlStrcmp(curr->name, (xmlChar *)"meta")==0)
 			{
-				name = (char *)xmlGetProp(curr, (xmlChar *)"name");
-				content = (char *)xmlGetProp(curr, (xmlChar *)"content");
-				if(strcmp(name, "citation_author")==0)
+				xmlChar *name = xmlGetProp(curr, (xmlChar *)"name");
+				xmlChar *content = xmlGetProp(curr, (xmlChar *)"content");
+				if(xmlStrcmp(name, (xmlChar *)"citation_author")==0)
 				{
-					this->author.push_back(content);
+					this->author.push_back((char *)content);
 				}
-				else if(strcmp(name, "citation_title")==0)
+				else if(xmlStrcmp(name, (xmlChar *)"citation_title")==0)
 				{
-					this->title = content;
+					this->title = (char *)content;
 					this->has_metadata = true;
 				}
-				else if(strcmp(name, "citation_date")==0)
+				else if(xmlStrcmp(name, (xmlChar *)"citation_date")==0)
 				{
-					this->date = content;
+					this->date = (char *)content;
 				}
-				else if(strcmp(name, "citation_journal_title")==0)
+				else if(xmlStrcmp(name, (xmlChar *)"citation_journal_title")==0)
 				{
-					this->journal = content;
+					this->journal = (char *)content;
 				}
-				else if(strcmp(name, "citation_publisher")==0)
+				else if(xmlStrcmp(name, (xmlChar *)"citation_publisher")==0)
 				{
-					this->publisher = content;
+					this->publisher = (char *)content;
 				}
-				else if(strcmp(name, "citation_volume")==0)
+				else if(xmlStrcmp(name, (xmlChar *)"citation_volume")==0)
 				{
-					this->volume = content;
+					this->volume = (char *)content;
 				}
-				else if(strcmp(name, "citation_issue")==0)
+				else if(xmlStrcmp(name, (xmlChar *)"citation_issue")==0)
 				{
-					this->issue = content;
+					this->issue = (char *)content;
 				}
-				else if(strcmp(name, "citation_firstpage")==0)
+				else if(xmlStrcmp(name, (xmlChar *)"citation_firstpage")==0)
 				{
-					this->first_page = content;
+					this->first_page = (char *)content;
 				}
+				xmlFree(name);
+				xmlFree(content);
 			}
 		}
 		traverse(curr->children);

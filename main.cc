@@ -19,6 +19,7 @@ int main(int argc, char **argv)
 	if(article.has_doi)
 	{
 		article.extract_metadata();
+		cout<<"Received metadata."<<endl;
 		if(article.has_metadata)
 		{
 			article.print_info();

@@ -7,7 +7,7 @@
 #include <libxml/HTMLparser.h>
 
 
-std::string htmlContent;
+extern std::string htmlText;
 static size_t write_data(void *, size_t, size_t, void*);
 
 class ArticleInfo
